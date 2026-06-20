@@ -1,0 +1,17 @@
+:root {
+    --lexia-primary: #14532d;
+    --lexia-accent: #0f766e;
+}
+
+.navbar-brand {
+    color: var(--lexia-primary);
+}
+
+.nav-link {
+    color: #334155;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--lexia-accent);
+}
