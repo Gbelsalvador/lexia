@@ -65,6 +65,11 @@ DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
 
+AUTH_USER_MODEL = "accounts.Utilisateur"
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:profile"
+LOGOUT_REDIRECT_URL = "accounts:login"
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {

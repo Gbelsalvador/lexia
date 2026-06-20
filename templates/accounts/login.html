@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - Lexia AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-5">
+        <div class="bg-white border rounded-2 p-4 p-md-5">
+            <h1 class="h3 mb-2">Connexion</h1>
+            <p class="text-secondary mb-4">
+                Retrouvez vos conversations juridiques.
+            </p>
+
+            {% include "accounts/_form_errors.html" %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-success w-100">
+                    Se connecter
+                </button>
+            </form>
+
+            <p class="text-center text-secondary mt-4 mb-0">
+                Pas encore de compte ?
+                <a href="{% url 'accounts:register' %}">Creer un compte PME</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

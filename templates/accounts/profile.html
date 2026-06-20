@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - Lexia AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="bg-white border rounded-2 p-4 p-md-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Profil utilisateur</h1>
+                    <p class="text-secondary mb-0">
+                        Informations du compte connecte.
+                    </p>
+                </div>
+                <a class="btn btn-outline-secondary align-self-start" href="{% url 'accounts:logout' %}">
+                    Se deconnecter
+                </a>
+            </div>
+
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Nom d'utilisateur</dt>
+                <dd class="col-sm-8">{{ request.user.username }}</dd>
+
+                <dt class="col-sm-4">Email</dt>
+                <dd class="col-sm-8">{{ request.user.email|default:"Non renseigne" }}</dd>
+
+                <dt class="col-sm-4">Entreprise</dt>
+                <dd class="col-sm-8">{{ request.user.nom_entreprise|default:"Non renseigne" }}</dd>
+
+                <dt class="col-sm-4">Secteur</dt>
+                <dd class="col-sm-8">{{ request.user.secteur_activite|default:"Non renseigne" }}</dd>
+
+                <dt class="col-sm-4">Telephone</dt>
+                <dd class="col-sm-8">{{ request.user.telephone|default:"Non renseigne" }}</dd>
+
+                <dt class="col-sm-4">Role</dt>
+                <dd class="col-sm-8">{{ request.user.get_role_display }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

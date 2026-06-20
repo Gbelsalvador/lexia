@@ -71,8 +71,8 @@ python manage.py runserver
 
 ## Statut actuel
 (Mets à jour cette section après chaque étape validée.)
-- [ ] Étape 1 — Initialisation
-- [ ] Étape 2 — accounts
+- [x] Étape 1 — Initialisation
+- [x] Étape 2 — accounts
 - [ ] Étape 3 — corpus
 - [ ] Étape 4 — rag_engine
 - [ ] Étape 5 — chatbot
