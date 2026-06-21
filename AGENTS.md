@@ -73,7 +73,7 @@ python manage.py runserver
 (Mets à jour cette section après chaque étape validée.)
 - [x] Étape 1 — Initialisation
 - [x] Étape 2 — accounts
-- [ ] Étape 3 — corpus
+- [x] Étape 3 — corpus
 - [ ] Étape 4 — rag_engine
 - [ ] Étape 5 — chatbot
 - [ ] Étape 6 — dashboard
