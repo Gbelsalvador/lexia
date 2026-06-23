@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.contrib.auth.views import redirect_to_login
-from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest, HttpResponse
 
 
 def is_admin(user: Any) -> bool:
@@ -15,17 +13,11 @@ def is_admin(user: Any) -> bool:
 
 def admin_required(view_func):
     """Restreint une vue aux utilisateurs administrateurs du projet."""
-
-    def wrapped_view(request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-
-        if not is_admin(request.user):
-            raise PermissionDenied("Acces reserve aux administrateurs.")
-
-        return view_func(request, *args, **kwargs)
-
-    return wrapped_view
+    return user_passes_test(
+        is_admin,
+        login_url="accounts:login",
+        redirect_field_name="next",
+    )(view_func)
 
 
 class AdminRequiredMixin(UserPassesTestMixin):

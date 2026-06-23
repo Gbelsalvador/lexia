@@ -8,10 +8,14 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("comptes/", include("accounts.urls")),
+    path("chatbot/", include("chatbot.urls")),
     path("corpus/", include("corpus.urls")),
     path("dashboard/", include("dashboard.urls")),
     path("", TemplateView.as_view(template_name="base.html"), name="home"),
 ]
+
+handler404 = "config.views.handler404"
+handler500 = "config.views.handler500"
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Utilisateurs PME - Lexia AI{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Utilisateurs PME</h1>
+        <p class="text-secondary mb-0">Recherche et suivi simple des comptes PME inscrits.</p>
+    </div>
+    <a class="btn btn-outline-secondary align-self-start" href="{% url 'dashboard:home' %}">
+        Retour au dashboard
+    </a>
+</div>
+
+<form class="bg-white border rounded-2 p-3 mb-4" method="get">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-7">
+            <label class="form-label" for="q">Recherche</label>
+            <input
+                class="form-control"
+                id="q"
+                name="q"
+                value="{{ query }}"
+                placeholder="Nom, email, entreprise ou telephone"
+            >
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="secteur">Secteur</label>
+            <select class="form-select" id="secteur" name="secteur">
+                <option value="">Tous les secteurs</option>
+                {% for secteur in secteurs %}
+                    <option value="{{ secteur }}" {% if secteur == secteur_selectionne %}selected{% endif %}>
+                        {{ secteur }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-primary" type="submit">Filtrer</button>
+        </div>
+    </div>
+</form>
+
+<div class="bg-white border rounded-2 p-3">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Entreprise</th>
+                    <th>Secteur</th>
+                    <th>Telephone</th>
+                    <th>Conversations</th>
+                    <th>Questions</th>
+                    <th>Inscription</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for utilisateur in utilisateurs %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ utilisateur.username }}</div>
+                            <div class="small text-secondary">{{ utilisateur.email|default:"Email non renseigne" }}</div>
+                        </td>
+                        <td>{{ utilisateur.nom_entreprise|default:"-" }}</td>
+                        <td>{{ utilisateur.secteur_activite|default:"-" }}</td>
+                        <td>{{ utilisateur.telephone|default:"-" }}</td>
+                        <td>{{ utilisateur.nb_conversations }}</td>
+                        <td>{{ utilisateur.nb_questions }}</td>
+                        <td>{{ utilisateur.date_inscription|date:"d/m/Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-4">
+                            Aucune PME ne correspond a la recherche.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

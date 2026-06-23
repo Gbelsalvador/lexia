@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Erreur serveur - Lexia AI{% endblock %}
+
+{% block content %}
+<section class="bg-white border rounded-2 p-4 p-md-5 text-center">
+    <p class="text-secondary mb-2">Erreur 500</p>
+    <h1 class="h3 mb-3">Une erreur est survenue</h1>
+    <p class="text-secondary mb-4">
+        Le service rencontre un probleme temporaire. Veuillez reessayer dans quelques instants.
+    </p>
+    <a class="btn btn-primary" href="{% url 'home' %}">Retour a l'accueil</a>
+</section>
+{% endblock %}

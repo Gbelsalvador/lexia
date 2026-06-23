@@ -1,0 +1,103 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Chatbot juridique - Lexia AI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'chatbot/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="chat-layout" id="chat-app"
+    data-envoyer-url="{% url 'chatbot:envoyer_message' %}"
+    data-feedback-url="{% url 'chatbot:enregistrer_feedback' %}"
+    data-conversation-id="{% if active_conversation %}{{ active_conversation.id }}{% endif %}">
+
+    <aside class="chat-sidebar card shadow-sm">
+        <div class="card-header bg-white border-0 pb-0">
+            <h2 class="h6 mb-1">Mes conversations</h2>
+            <p class="small text-muted mb-2">Historique personnel</p>
+        </div>
+        <div class="card-body pt-2">
+            {% if conversations %}
+                <div class="list-group list-group-flush gap-2">
+                    {% for conversation in conversations %}
+                        <a
+                            href="{% url 'chatbot:chat' %}?conversation={{ conversation.id }}"
+                            class="list-group-item list-group-item-action rounded-3 {% if active_conversation and active_conversation.id == conversation.id %}active{% endif %}"
+                        >
+                            <div class="fw-semibold text-truncate">
+                                {{ conversation.titre|default:"Nouvelle conversation" }}
+                            </div>
+                            <div class="small opacity-75">
+                                {{ conversation.date_mise_a_jour|date:"d/m/Y H:i" }}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Aucune conversation pour le moment.</p>
+            {% endif %}
+        </div>
+    </aside>
+
+    <div class="chat-main card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h5 mb-0">Assistant Code du Travail RDC</h1>
+                <p class="small text-muted mb-0">Posez vos questions en langage simple.</p>
+            </div>
+        </div>
+
+        <div id="chat-messages" class="chat-messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <article class="chat-bubble {% if message.role == 'user' %}chat-bubble-user{% else %}chat-bubble-assistant{% endif %}">
+                        <div class="chat-bubble-content">{{ message.contenu|linebreaksbr }}</div>
+                        {% if message.role == 'assistant' and message.sources %}
+                            <div class="chat-sources mt-2">
+                                {% for source in message.sources %}
+                                    <span class="badge text-bg-light border me-1 mb-1">
+                                        {{ source.numero_article|default:"Article non precise" }} du Code du Travail
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            <div class="chat-feedback mt-2" data-feedback-message-id="{{ message.id }}">
+                                <button type="button" class="btn btn-sm btn-outline-success" data-feedback="POSITIF">👍</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-feedback="NEGATIF">👎</button>
+                            </div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            {% else %}
+                <div class="chat-empty text-muted">
+                    Commencez une conversation en posant votre premiere question.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="chat-loading d-none" id="chat-loading">L'assistant reflechit...</div>
+
+        <div class="card-footer bg-white">
+            <form id="chat-form" class="d-flex gap-2">
+                {% csrf_token %}
+                <input
+                    id="chat-input"
+                    name="question"
+                    type="text"
+                    class="form-control"
+                    placeholder="Exemple : Que dit le Code du Travail sur la periode d'essai ?"
+                    autocomplete="off"
+                    required
+                >
+                <button id="chat-submit" type="submit" class="btn btn-primary">Envoyer</button>
+            </form>
+            <div id="chat-error" class="text-danger small mt-2 d-none"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'chatbot/chat.js' %}"></script>
+{% endblock %}

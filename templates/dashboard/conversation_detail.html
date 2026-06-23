@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Audit conversation - Lexia AI{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ conversation.titre|default:"Conversation sans titre" }}</h1>
+        <p class="text-secondary mb-0">
+            PME : {{ conversation.utilisateur.username }} -
+            derniere activite : {{ conversation.date_mise_a_jour|date:"d/m/Y H:i" }}
+        </p>
+    </div>
+    <a class="btn btn-outline-secondary align-self-start" href="{% url 'dashboard:home' %}">
+        Retour au dashboard
+    </a>
+</div>
+
+<div class="bg-white border rounded-2 p-3">
+    {% for message in messages %}
+        <article class="border rounded-2 p-3 mb-3 {% if message.role == 'assistant' %}bg-light{% endif %}">
+            <div class="d-flex justify-content-between gap-3 mb-2">
+                <span class="badge {% if message.role == 'user' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                    {{ message.get_role_display }}
+                </span>
+                <span class="small text-secondary">{{ message.date_creation|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="mb-2">{{ message.contenu|linebreaksbr }}</div>
+
+            {% if message.role == 'assistant' %}
+                <div class="small text-secondary mb-2">
+                    Feedback :
+                    {% if message.feedback %}
+                        {{ message.get_feedback_display }}
+                    {% else %}
+                        Non renseigne
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if message.sources %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for source in message.sources %}
+                        <span class="badge text-bg-light border">
+                            {{ source.numero_article|default:"Article non precise" }}
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </article>
+    {% empty %}
+        <p class="text-secondary mb-0">Cette conversation ne contient aucun message.</p>
+    {% endfor %}
+</div>
+{% endblock %}
