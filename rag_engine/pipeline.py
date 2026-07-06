@@ -7,6 +7,27 @@ from rag_engine.prompt_builder import build_prompt, sanitize_user_text
 from rag_engine.retriever import retrieve_relevant_chunks
 
 
+def _fallback_response(question: str, chunks: list[dict[str, Any]]) -> str:
+    """Produit une réponse simple et utile sans LLM externe."""
+    if not chunks:
+        return (
+            "Je n’ai pas trouvé de contexte juridique suffisant dans le corpus pour répondre "
+            "de manière fiable. Veuillez reformuler votre question ou vérifier les documents "
+            "indexés."
+        )
+
+    first_chunk = chunks[0]
+    article = first_chunk.get("numero_article") or "Article non précisé"
+    document = first_chunk.get("document") or "Document non précisé"
+    excerpt = (first_chunk.get("extrait") or "").strip()
+
+    return (
+        f"Voici une réponse de secours basée sur le contexte disponible. "
+        f"Votre question semble se rattacher à {document} ({article}). "
+        f"Le passage pertinent indique : {excerpt[:500]}"
+    )
+
+
 def answer_question(
     question: str,
     conversation: list[dict[str, str]] | None = None,
@@ -44,7 +65,17 @@ def answer_question(
     )
 
     llm_client = LLMClient()
-    reponse = llm_client.generate(prompt)
+    try:
+        reponse = llm_client.generate(prompt)
+    except Exception:
+        reponse = _fallback_response(cleaned_question, [
+            {
+                "document": str(chunk.metadata.get("document_titre") or chunk.metadata.get("source") or ""),
+                "numero_article": str(chunk.metadata.get("numero_article") or ""),
+                "extrait": (chunk.content or "").strip(),
+            }
+            for chunk in chunks
+        ])
 
     sources: list[dict[str, str]] = []
     for chunk in chunks:

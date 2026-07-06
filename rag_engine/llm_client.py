@@ -1,6 +1,9 @@
 ﻿from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from django.conf import settings
 
@@ -24,12 +27,18 @@ class LLMClient:
     def __init__(
         self,
         provider: str | None = None,
-        openai_model: str = "gpt-4o-mini",
+        openai_model: str | None = None,
         timeout: float = 30.0,
     ) -> None:
         self.provider = (provider or settings.LLM_PROVIDER or "openai").lower().strip()
-        self.openai_model = openai_model
+        self.openai_model = openai_model or self._default_model_for_provider()
         self.timeout = timeout
+
+    def _default_model_for_provider(self) -> str:
+        """Retourne le modele par defaut adapte au fournisseur choisi."""
+        if self.provider == "groq":
+            return "llama-3.3-70b-versatile"
+        return "gpt-4o-mini"
 
     def generate(self, prompt: str) -> str:
         """
@@ -48,12 +57,18 @@ class LLMClient:
         if self.provider == "openai":
             return self._generate_openai(cleaned_prompt).content
 
+        if self.provider == "groq":
+            try:
+                return self._generate_groq(cleaned_prompt).content
+            except RuntimeError:
+                return self._generate_openai(cleaned_prompt).content
+
         if self.provider == "gemini":
             return self._generate_gemini(cleaned_prompt).content
 
         raise RuntimeError(
             f"Fournisseur LLM non supporte: '{self.provider}'. "
-            "Utilisez 'openai' ou 'gemini'."
+            "Utilisez 'openai', 'groq' ou 'gemini'."
         )
 
     def _generate_openai(self, prompt: str) -> LLMResponse:
@@ -121,6 +136,66 @@ class LLMClient:
             ) from exc
         except Exception as exc:  # pragma: no cover - defense generale
             raise RuntimeError("Erreur inattendue lors de l'appel OpenAI.") from exc
+
+    def _generate_groq(self, prompt: str) -> LLMResponse:
+        """Implementation Groq via l'API OpenAI-compatible de Groq."""
+        api_key = (settings.GROQ_API_KEY or "").strip()
+        if not api_key:
+            raise RuntimeError(
+                "GROQ_API_KEY manquante. Configurez la cle dans le fichier .env."
+            )
+
+        payload = {
+            "model": self.openai_model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "Tu reponds en francais clair et tu respectes "
+                        "strictement les consignes du prompt utilisateur."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.2,
+        }
+        request = Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                body = response.read().decode("utf-8")
+                data = json.loads(body)
+        except HTTPError as exc:
+            status_code = exc.code
+            if status_code in {401, 403}:
+                raise RuntimeError("Cle Groq invalide ou non autorisee. Verifiez GROQ_API_KEY.") from exc
+            raise RuntimeError(
+                f"Erreur Groq (HTTP {status_code}). Veuillez reessayer plus tard."
+            ) from exc
+        except URLError as exc:
+            raise RuntimeError("Erreur de connexion a Groq. Verifiez votre reseau puis reessayez.") from exc
+        except TimeoutError as exc:
+            raise RuntimeError("Timeout Groq: le service met trop de temps a repondre.") from exc
+        except Exception as exc:  # pragma: no cover - defense generale
+            raise RuntimeError("Erreur inattendue lors de l'appel Groq.") from exc
+
+        choices = data.get("choices") or []
+        if not choices:
+            raise RuntimeError("Groq a retourne une reponse vide.")
+
+        content = (choices[0].get("message", {}).get("content") or "").strip()
+        if not content:
+            raise RuntimeError("Groq a retourne une reponse vide.")
+
+        return LLMResponse(content=content, provider="groq", model=self.openai_model)
 
     def _generate_gemini(self, prompt: str) -> LLMResponse:
         """
