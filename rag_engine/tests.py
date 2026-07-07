@@ -65,7 +65,7 @@ class RAGPipelineTests(SimpleTestCase):
 
         result = answer_question("Que dit l'article 1 ?")
 
-        self.assertIn("réponse de secours", result["reponse"].lower())
+        self.assertIn("service llm", result["reponse"].lower())
         self.assertEqual(result["sources"][0]["numero_article"], "Article 1")
 
     @override_settings(LLM_PROVIDER="groq")
@@ -84,20 +84,15 @@ class RAGPipelineTests(SimpleTestCase):
         mock_generate_groq.assert_called_once()
 
     @override_settings(LLM_PROVIDER="groq")
-    def test_generate_fait_fallback_vers_openai_si_groq_echoue(self) -> None:
+    def test_generate_ne_fait_pas_fallback_vers_openai_si_groq_echoue(self) -> None:
         with patch("rag_engine.llm_client.LLMClient._generate_groq") as mock_generate_groq, patch(
             "rag_engine.llm_client.LLMClient._generate_openai"
         ) as mock_generate_openai:
             mock_generate_groq.side_effect = RuntimeError("Cle Groq invalide")
-            mock_generate_openai.return_value = LLMResponse(
-                content="Reponse openai",
-                provider="openai",
-                model="gpt-4o-mini",
-            )
 
             client = LLMClient()
-            response = client.generate("Bonjour")
+            with self.assertRaisesRegex(RuntimeError, "Cle Groq invalide"):
+                client.generate("Bonjour")
 
-        self.assertEqual(response, "Reponse openai")
         mock_generate_groq.assert_called_once()
-        mock_generate_openai.assert_called_once()
+        mock_generate_openai.assert_not_called()

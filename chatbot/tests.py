@@ -53,6 +53,18 @@ class ChatbotSecurityTests(TestCase):
         self.assertEqual(Conversation.objects.count(), 1)
         self.assertEqual(response.json()["reponse"], "Reponse test")
 
+    def test_chat_page_n_affiche_plus_les_objets_message_en_mode_plain(self) -> None:
+        conversation = Conversation.objects.create(utilisateur=self.user, titre="Test")
+        Message.objects.create(conversation=conversation, role=Message.Role.USER, contenu="Bonjour")
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chatbot:chat"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bonjour")
+        self.assertNotContains(response, "Utilisateur - conv")
+        self.assertNotContains(response, "Assistant - conv")
+
     @override_settings(MAX_CHAT_QUESTION_LENGTH=10)
     def test_envoyer_message_rejette_question_trop_longue(self) -> None:
         self.client.force_login(self.user)

@@ -8,7 +8,7 @@ from rag_engine.retriever import retrieve_relevant_chunks
 
 
 def _fallback_response(question: str, chunks: list[dict[str, Any]]) -> str:
-    """Produit une réponse simple et utile sans LLM externe."""
+    """Produit une réponse utile et transparente sans LLM externe."""
     if not chunks:
         return (
             "Je n’ai pas trouvé de contexte juridique suffisant dans le corpus pour répondre "
@@ -20,11 +20,13 @@ def _fallback_response(question: str, chunks: list[dict[str, Any]]) -> str:
     article = first_chunk.get("numero_article") or "Article non précisé"
     document = first_chunk.get("document") or "Document non précisé"
     excerpt = (first_chunk.get("extrait") or "").strip()
+    excerpt_text = excerpt[:700].strip()
 
     return (
-        f"Voici une réponse de secours basée sur le contexte disponible. "
-        f"Votre question semble se rattacher à {document} ({article}). "
-        f"Le passage pertinent indique : {excerpt[:500]}"
+        f"Je n’ai pas pu obtenir une réponse générée par le service LLM aujourd’hui. "
+        f"Je peux toutefois vous proposer un aperçu basé sur le contexte récupéré : "
+        f"le document {document} mentionne {article}. "
+        f"Passage pertinent : {excerpt_text or 'aucun extrait disponible.'}"
     )
 
 

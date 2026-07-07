@@ -50,8 +50,8 @@
         </div>
 
         <div id="chat-messages" class="chat-messages">
-            {% if messages %}
-                {% for message in messages %}
+            {% if chat_messages %}
+                {% for message in chat_messages %}
                     <article class="chat-bubble {% if message.role == 'user' %}chat-bubble-user{% else %}chat-bubble-assistant{% endif %}">
                         <div class="chat-bubble-content">{{ message.contenu|linebreaksbr }}</div>
                         {% if message.role == 'assistant' and message.sources %}

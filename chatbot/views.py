@@ -63,14 +63,14 @@ def chat_view(request: HttpRequest) -> HttpResponse:
     elif conversations:
         active_conversation = conversations.first()
 
-    messages = []
+    chat_messages = []
     if active_conversation is not None:
-        messages = list(active_conversation.messages.order_by("date_creation", "id"))
+        chat_messages = list(active_conversation.messages.order_by("date_creation", "id"))
 
     context = {
         "conversations": conversations,
         "active_conversation": active_conversation,
-        "messages": messages,
+        "chat_messages": chat_messages,
     }
     return render(request, "chatbot/chat.html", context)
 

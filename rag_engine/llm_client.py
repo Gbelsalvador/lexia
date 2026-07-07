@@ -58,10 +58,7 @@ class LLMClient:
             return self._generate_openai(cleaned_prompt).content
 
         if self.provider == "groq":
-            try:
-                return self._generate_groq(cleaned_prompt).content
-            except RuntimeError:
-                return self._generate_openai(cleaned_prompt).content
+            return self._generate_groq(cleaned_prompt).content
 
         if self.provider == "gemini":
             return self._generate_gemini(cleaned_prompt).content
@@ -165,7 +162,9 @@ class LLMClient:
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             },
+            
             method="POST",
         )
 

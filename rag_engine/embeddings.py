@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Iterable, Sequence
 
 from django.conf import settings
@@ -15,10 +16,12 @@ class EmbeddingService:
 
     def __init__(self, model_name: str | None = None) -> None:
         self.model_name = model_name or settings.EMBEDDING_MODEL_NAME
-        self._model = self._load_model()
+        self._model = self._get_model(self.model_name)
 
-    def _load_model(self):
-        """Charge le modele sentence-transformers configure."""
+    @staticmethod
+    @lru_cache(maxsize=4)
+    def _get_model(model_name: str):
+        """Charge le modele sentence-transformers une seule fois par nom."""
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
@@ -27,10 +30,10 @@ class EmbeddingService:
             ) from exc
 
         try:
-            return SentenceTransformer(self.model_name)
+            return SentenceTransformer(model_name)
         except Exception as exc:  # pragma: no cover - depend du runtime local
             raise RuntimeError(
-                f"Impossible de charger le modele d'embeddings '{self.model_name}'."
+                f"Impossible de charger le modele d'embeddings '{model_name}'."
             ) from exc
 
     def embed(self, texte: str) -> list[float]:
