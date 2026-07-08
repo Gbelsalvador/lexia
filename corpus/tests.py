@@ -103,3 +103,58 @@ class DocumentUploadViewTests(TestCase):
         document = DocumentJuridique.objects.get(titre="Code du Travail")
         self.assertEqual(document.statut, DocumentJuridique.Statut.EN_COURS)
         mock_schedule.assert_called_once_with(document.pk)
+
+
+class IndexChunksIntegrationTests(TestCase):
+    """Test d'integration chunking -> metadonnees -> stockage BDD."""
+
+    def setUp(self) -> None:
+        self.admin = Utilisateur.objects.create_user(
+            username="admin_index",
+            password="MotDePasseComplexe123!",
+            role=Utilisateur.Role.ADMIN,
+        )
+
+    @patch("corpus.services.ChromaVectorStore")
+    @patch("corpus.services.EmbeddingService")
+    @patch("corpus.services.extract_text_from_pdf")
+    def test_index_chunks_conserve_les_numeros_d_articles(
+        self,
+        mock_extract,
+        mock_embedding_service,
+        mock_vector_store,
+    ) -> None:
+        from corpus.services import index_chunks
+
+        mock_extract.return_value = (
+            "Article 1. Le contrat est ecrit.\n\n"
+            "Article 2. La duree du travail est limitee."
+        )
+        mock_embedding_service.return_value.embed_many.return_value = [[0.1], [0.2]]
+        mock_store = mock_vector_store.return_value
+
+        fichier = SimpleUploadedFile(
+            "code.pdf",
+            b"%PDF-123456789",
+            content_type="application/pdf",
+        )
+        document = DocumentJuridique.objects.create(
+            titre="Code test",
+            version="v1",
+            fichier=fichier,
+            uploade_par=self.admin,
+        )
+
+        nombre = index_chunks(document)
+
+        self.assertEqual(nombre, 2)
+        document.refresh_from_db()
+        self.assertEqual(document.statut, DocumentJuridique.Statut.ACTIF)
+        articles = set(document.chunks.values_list("numero_article", flat=True))
+        self.assertEqual(articles, {"Article 1", "Article 2"})
+        mock_store.add_chunks.assert_called_once()
+        metadatas = mock_store.add_chunks.call_args.kwargs["metadatas"]
+        self.assertEqual(
+            {meta["numero_article"] for meta in metadatas},
+            {"Article 1", "Article 2"},
+        )

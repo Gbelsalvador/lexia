@@ -17,7 +17,12 @@ def _run_indexing(document_id: int) -> None:
 
     try:
         document = DocumentJuridique.objects.get(pk=document_id)
-        index_chunks(document)
+        nombre_chunks = index_chunks(document)
+        logger.info(
+            "Indexation terminee pour document=%s (%s chunks).",
+            document_id,
+            nombre_chunks,
+        )
     except DocumentJuridique.DoesNotExist:
         logger.warning("Document %s introuvable pour indexation asynchrone.", document_id)
     except Exception:

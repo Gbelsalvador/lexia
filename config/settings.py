@@ -135,6 +135,11 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
 SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+if "test" in sys.argv:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
 MAX_UPLOAD_SIZE_MB = env.int("MAX_UPLOAD_SIZE_MB", default=10)
 MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 MAX_CHAT_QUESTION_LENGTH = env.int("MAX_CHAT_QUESTION_LENGTH", default=1200)
@@ -156,3 +161,41 @@ EMBEDDING_MODEL_NAME = env(
     "EMBEDDING_MODEL_NAME",
     default="paraphrase-multilingual-MiniLM-L12-v2",
 )
+
+LOG_LEVEL = env("LOG_LEVEL", default="DEBUG" if DEBUG else "INFO")
+LOG_FILE = env("LOG_FILE", default="")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "rag_engine": {"level": LOG_LEVEL, "propagate": True},
+        "chatbot": {"level": LOG_LEVEL, "propagate": True},
+        "corpus": {"level": LOG_LEVEL, "propagate": True},
+    },
+}
+
+if LOG_FILE:
+    LOGGING["handlers"]["file"] = {
+        "class": "logging.FileHandler",
+        "filename": LOG_FILE,
+        "formatter": "standard",
+    }
+    LOGGING["root"]["handlers"].append("file")

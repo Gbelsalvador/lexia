@@ -1,10 +1,13 @@
 ﻿from __future__ import annotations
 
+import logging
 from typing import Any
 
 from rag_engine.llm_client import LLMClient
 from rag_engine.prompt_builder import build_prompt, sanitize_user_text
 from rag_engine.retriever import retrieve_relevant_chunks
+
+logger = logging.getLogger(__name__)
 
 
 def _fallback_response(question: str, chunks: list[dict[str, Any]]) -> str:
@@ -60,6 +63,11 @@ def answer_question(
     sanitize_user_text(cleaned_question)
 
     chunks = retrieve_relevant_chunks(cleaned_question, top_k=5)
+    if not chunks:
+        logger.warning(
+            "Aucun chunk pertinent recupere pour la question (seuil RAG applique)."
+        )
+
     prompt = build_prompt(
         question=cleaned_question,
         chunks_contexte=chunks,
@@ -70,6 +78,7 @@ def answer_question(
     try:
         reponse = llm_client.generate(prompt)
     except Exception:
+        logger.exception("Echec generation LLM, activation du fallback local.")
         reponse = _fallback_response(cleaned_question, [
             {
                 "document": str(chunk.metadata.get("document_titre") or chunk.metadata.get("source") or ""),

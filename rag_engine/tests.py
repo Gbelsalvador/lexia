@@ -115,3 +115,60 @@ class RAGPipelineTests(SimpleTestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "Pertinent")
+
+
+class RAGIntegrationTests(SimpleTestCase):
+    """Tests d'integration du flux RAG complet (composants mockes)."""
+
+    @patch("rag_engine.pipeline.LLMClient")
+    @patch("rag_engine.pipeline.retrieve_relevant_chunks")
+    def test_pipeline_sans_chunks_retourne_sources_vides(
+        self,
+        mock_retrieve,
+        mock_llm_client,
+    ) -> None:
+        mock_retrieve.return_value = []
+        mock_llm_client.return_value.generate.return_value = (
+            "Je ne dispose pas d'information suffisante dans le corpus."
+        )
+
+        with self.assertLogs("rag_engine.pipeline", level="WARNING") as logs:
+            result = answer_question("Question hors corpus")
+
+        self.assertEqual(result["sources"], [])
+        self.assertIn("Aucun chunk pertinent", logs.output[0])
+        mock_llm_client.return_value.generate.assert_called_once()
+
+    @patch("rag_engine.pipeline.LLMClient")
+    @patch("rag_engine.pipeline.retrieve_relevant_chunks")
+    def test_pipeline_propage_document_et_article_dans_les_sources(
+        self,
+        mock_retrieve,
+        mock_llm_client,
+    ) -> None:
+        mock_retrieve.return_value = [
+            RetrievedChunk(
+                content="Article 12. Le salaire minimum est garanti.",
+                metadata={
+                    "document_titre": "Code du Travail RDC",
+                    "numero_article": "Article 12",
+                },
+                score=0.85,
+            ),
+            RetrievedChunk(
+                content="Article 13. Les heures supplementaires sont reglementees.",
+                metadata={
+                    "document_titre": "Code du Travail RDC",
+                    "numero_article": "Article 13",
+                },
+                score=0.72,
+            ),
+        ]
+        mock_llm_client.return_value.generate.return_value = "Reponse complete."
+
+        result = answer_question("Quelles regles sur le salaire ?")
+
+        self.assertEqual(result["reponse"], "Reponse complete.")
+        self.assertEqual(len(result["sources"]), 2)
+        self.assertEqual(result["sources"][0]["numero_article"], "Article 12")
+        self.assertEqual(result["sources"][1]["document"], "Code du Travail RDC")

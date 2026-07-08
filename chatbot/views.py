@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from django.conf import settings
@@ -12,6 +13,9 @@ from django.views.decorators.http import require_GET, require_POST
 from chatbot.models import Conversation, Message
 from chatbot.rate_limit import is_chat_rate_limited
 from rag_engine.pipeline import answer_question
+
+
+logger = logging.getLogger(__name__)
 
 
 LLM_FALLBACK_RESPONSE = (
@@ -104,6 +108,7 @@ def envoyer_message(request: HttpRequest) -> JsonResponse:
         )
 
     if is_chat_rate_limited(request.user.pk):
+        logger.warning("Rate limit chat atteint pour user=%s", request.user.pk)
         return JsonResponse(
             {
                 "erreur": (
@@ -140,6 +145,11 @@ def envoyer_message(request: HttpRequest) -> JsonResponse:
             conversation=_conversation_history(conversation),
         )
     except Exception:
+        logger.exception(
+            "Erreur pipeline RAG pour user=%s conversation=%s",
+            request.user.pk,
+            conversation.pk,
+        )
         assistant_message = Message.objects.create(
             conversation=conversation,
             role=Message.Role.ASSISTANT,
