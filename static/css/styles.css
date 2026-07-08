@@ -1,21 +1,117 @@
 :root {
     --lexia-primary: #14532d;
+    --lexia-primary-light: #166534;
     --lexia-accent: #0f766e;
+    --lexia-accent-light: #14b8a6;
+    --lexia-surface: #f8faf9;
+    --lexia-border: #e2e8f0;
+    --lexia-text: #1e293b;
+    --lexia-text-muted: #64748b;
+    --lexia-shadow: 0 4px 24px rgba(20, 83, 45, 0.08);
+    --lexia-radius: 1rem;
+}
+
+body {
+    color: var(--lexia-text);
+    background: linear-gradient(160deg, #f0fdf4 0%, #f8fafc 45%, #f1f5f9 100%);
+}
+
+/* Navbar */
+.site-header {
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 1px 0 var(--lexia-border);
 }
 
 .navbar-brand {
-    color: var(--lexia-primary);
+    color: var(--lexia-primary) !important;
+    letter-spacing: -0.02em;
+}
+
+.navbar-brand span {
+    color: var(--lexia-accent);
 }
 
 .nav-link {
-    color: #334155;
+    color: var(--lexia-text-muted);
+    font-weight: 500;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.75rem !important;
 }
 
 .nav-link:hover,
 .nav-link:focus {
-    color: var(--lexia-accent);
+    color: var(--lexia-primary);
+    background: rgba(20, 83, 45, 0.06);
 }
 
+.nav-link.active {
+    color: var(--lexia-primary) !important;
+    background: rgba(20, 83, 45, 0.1);
+}
+
+.btn-logout-nav {
+    color: var(--lexia-text-muted) !important;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.btn-logout-nav:hover {
+    color: #b91c1c !important;
+    background: rgba(185, 28, 28, 0.06);
+}
+
+/* Boutons globaux */
+.btn-success {
+    --bs-btn-bg: var(--lexia-primary);
+    --bs-btn-border-color: var(--lexia-primary);
+    --bs-btn-hover-bg: var(--lexia-primary-light);
+    --bs-btn-hover-border-color: var(--lexia-primary-light);
+    --bs-btn-active-bg: #134e28;
+    --bs-btn-active-border-color: #134e28;
+}
+
+.btn-outline-success {
+    --bs-btn-color: var(--lexia-primary);
+    --bs-btn-border-color: var(--lexia-primary);
+    --bs-btn-hover-bg: var(--lexia-primary);
+    --bs-btn-hover-border-color: var(--lexia-primary);
+}
+
+/* Accueil */
 .hero-section h1 {
     color: var(--lexia-primary);
+    letter-spacing: -0.02em;
+}
+
+.hero-section .badge.text-bg-success {
+    background: var(--lexia-primary) !important;
+}
+
+.feature-card {
+    border: 1px solid var(--lexia-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--lexia-shadow);
+}
+
+.feature-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: rgba(20, 83, 45, 0.1);
+    color: var(--lexia-primary);
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.site-footer {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
 }

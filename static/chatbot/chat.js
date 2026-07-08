@@ -43,17 +43,25 @@
     const formatArticleLabel = (numeroArticle) => {
         const value = String(numeroArticle || "").trim();
         if (!value) {
-            return "Article non precise du Code du Travail";
+            return "Article non precise";
         }
-
         if (value.toLowerCase().startsWith("article")) {
-            return `${value} du Code du Travail`;
+            return value;
         }
-
-        return `Article ${value} du Code du Travail`;
+        return `Article ${value}`;
     };
 
     const createMessageBubble = ({ role, content, sources = [], messageId = null }) => {
+        const row = document.createElement("div");
+        row.className = `chat-message ${
+            role === "user" ? "chat-message-user" : "chat-message-assistant"
+        }`;
+
+        const avatar = document.createElement("div");
+        avatar.className = "chat-avatar";
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = role === "user" ? "V" : "LX";
+
         const article = document.createElement("article");
         article.className = `chat-bubble ${
             role === "user" ? "chat-bubble-user" : "chat-bubble-assistant"
@@ -66,10 +74,12 @@
 
         if (role === "assistant" && Array.isArray(sources) && sources.length > 0) {
             const sourcesDiv = document.createElement("div");
-            sourcesDiv.className = "chat-sources mt-2";
+            sourcesDiv.className = "chat-sources";
+            sourcesDiv.innerHTML = '<span class="chat-sources-label">Sources citees</span>';
+
             sources.forEach((source) => {
                 const badge = document.createElement("span");
-                badge.className = "badge text-bg-light border me-1 mb-1";
+                badge.className = "chat-source-badge";
                 badge.textContent = formatArticleLabel(source.numero_article);
                 sourcesDiv.appendChild(badge);
             });
@@ -77,17 +87,20 @@
 
             if (messageId) {
                 const feedbackDiv = document.createElement("div");
-                feedbackDiv.className = "chat-feedback mt-2";
+                feedbackDiv.className = "chat-feedback";
                 feedbackDiv.dataset.feedbackMessageId = String(messageId);
                 feedbackDiv.innerHTML = [
-                    '<button type="button" class="btn btn-sm btn-outline-success" data-feedback="POSITIF">👍</button>',
-                    '<button type="button" class="btn btn-sm btn-outline-danger" data-feedback="NEGATIF">👎</button>',
+                    '<span class="chat-feedback-label">Utile ?</span>',
+                    '<button type="button" class="btn btn-sm btn-outline-success" data-feedback="POSITIF" title="Reponse utile">👍</button>',
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-feedback="NEGATIF" title="Reponse inutile">👎</button>',
                 ].join("");
                 article.appendChild(feedbackDiv);
             }
         }
 
-        return article;
+        row.appendChild(avatar);
+        row.appendChild(article);
+        return row;
     };
 
     const setLoading = (isLoading) => {
@@ -130,6 +143,14 @@
 
         return payload;
     };
+
+    document.querySelectorAll(".chat-suggestion").forEach((button) => {
+        button.addEventListener("click", () => {
+            const question = button.dataset.question || button.textContent.trim();
+            input.value = question;
+            input.focus();
+        });
+    });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();

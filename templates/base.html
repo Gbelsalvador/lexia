@@ -14,12 +14,12 @@
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body class="min-vh-100 d-flex flex-column bg-light">
-    <header class="border-bottom bg-white">
-        <nav class="navbar navbar-expand-lg">
+<body class="min-vh-100 d-flex flex-column">
+    <header class="site-header border-bottom bg-white">
+        <nav class="navbar navbar-expand-lg py-3">
             <div class="container">
-                <a class="navbar-brand fw-semibold" href="{% url 'home' %}">
-                    Lexia AI
+                <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+                    Lexia <span>AI</span>
                 </a>
                 <button
                     class="navbar-toggler"
@@ -35,7 +35,7 @@
                 <div class="collapse navbar-collapse" id="mainNavbar">
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'chatbot:chat' %}">Chatbot</a>
+                            <a class="nav-link {% if request.resolver_match.app_name == 'chatbot' %}active{% endif %}" href="{% url 'chatbot:chat' %}">Chatbot</a>
                         </li>
                         {% if request.user.is_authenticated and request.user.is_admin %}
                             <li class="nav-item">
@@ -58,7 +58,7 @@
                             <li class="nav-item">
                                 <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="nav-link btn btn-link border-0 p-0">
+                                    <button type="submit" class="nav-link btn btn-link border-0 btn-logout-nav">
                                         Deconnexion
                                     </button>
                                 </form>
@@ -81,8 +81,8 @@
         </nav>
     </header>
 
-    <main class="flex-grow-1 py-4">
-        <div class="container">
+    <main class="flex-grow-1 {% block main_extra_class %}py-4{% endblock %}">
+        <div class="{% block container_class %}container{% endblock %}">
             {% if messages %}
                 <div class="mb-3">
                     {% for message in messages %}
@@ -97,7 +97,7 @@
         </div>
     </main>
 
-    <footer class="border-top bg-white py-3 mt-auto">
+    <footer class="site-footer border-top py-3 mt-auto">
         <div class="container small text-secondary d-flex flex-column flex-md-row justify-content-between gap-2">
             <span>Lexia AI - PFE RAG Code du Travail RDC</span>
             <span>Kinshasa</span>
