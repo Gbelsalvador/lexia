@@ -1,7 +1,11 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
+from unittest.mock import patch
 
+from accounts.models import Utilisateur
 from corpus.forms import DocumentJuridiqueForm
+from corpus.models import DocumentJuridique
 from corpus.services import chunk_text
 
 
@@ -65,3 +69,37 @@ class DocumentUploadValidationTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("fichier", form.errors)
+
+
+class DocumentUploadViewTests(TestCase):
+    """Tests du flux d'upload avec indexation asynchrone."""
+
+    def setUp(self) -> None:
+        self.admin = Utilisateur.objects.create_user(
+            username="admin_corpus",
+            password="MotDePasseComplexe123!",
+            role=Utilisateur.Role.ADMIN,
+        )
+
+    @patch("corpus.views.schedule_indexing")
+    def test_upload_lance_indexation_asynchrone(self, mock_schedule) -> None:
+        fichier = SimpleUploadedFile(
+            "code.pdf",
+            b"%PDF-123456789",
+            content_type="application/pdf",
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("corpus:upload"),
+            {
+                "titre": "Code du Travail",
+                "version": "v1",
+                "fichier": fichier,
+            },
+        )
+
+        self.assertRedirects(response, reverse("corpus:liste_documents"))
+        document = DocumentJuridique.objects.get(titre="Code du Travail")
+        self.assertEqual(document.statut, DocumentJuridique.Statut.EN_COURS)
+        mock_schedule.assert_called_once_with(document.pk)

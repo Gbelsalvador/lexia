@@ -12,9 +12,9 @@ du Travail : Cas des PME de la ville de Kinshasa".
 - Stockage vectoriel : ChromaDB en mode persisté localement (PersistentClient).
 - Embeddings : sentence-transformers, modèle
   `paraphrase-multilingual-MiniLM-L12-v2` (gratuit, local, fonctionne en français).
-- Génération de texte (LLM) : API externe OpenAI (gpt-4o-mini) via clé ou grok avec son api le choix sera fait grave au .env
-  dans `.env`. Prévoir une interface (classe LLMClient) qui permettrait de
-  basculer vers un autre fournisseur sans réécrire tout le code.
+- Génération de texte (LLM) : API externe configurable via `.env`
+  (`LLM_PROVIDER=openai`, `groq` ou `gemini`). Interface `LLMClient` pour
+  basculer de fournisseur sans réécrire le code.
 - Auth : système Django natif (AbstractUser étendu), rôles PME / ADMIN.
 
 ## Structure du projet (cible)

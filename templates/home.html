@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Lexia AI - Assistant juridique pour PME{% endblock %}
+
+{% block content %}
+<section class="hero-section py-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="badge text-bg-success mb-3">Code du Travail RDC</span>
+            <h1 class="display-5 fw-semibold mb-3">
+                Vulgarisez le droit du travail pour votre PME
+            </h1>
+            <p class="lead text-secondary mb-4">
+                Lexia AI repond a vos questions en s'appuyant sur le corpus juridique
+                officiel. Les reponses sont vulgarisees et accompagnees des articles cites.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                {% if request.user.is_authenticated %}
+                    <a class="btn btn-success btn-lg" href="{% url 'chatbot:chat' %}">
+                        Ouvrir le chatbot
+                    </a>
+                    <a class="btn btn-outline-secondary btn-lg" href="{% url 'accounts:profile' %}">
+                        Mon profil
+                    </a>
+                {% else %}
+                    <a class="btn btn-success btn-lg" href="{% url 'accounts:register' %}">
+                        Inscrire ma PME
+                    </a>
+                    <a class="btn btn-outline-success btn-lg" href="{% url 'accounts:login' %}">
+                        Se connecter
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="bg-white border rounded-3 p-4 shadow-sm">
+                <h2 class="h5 mb-3">Comment ca marche ?</h2>
+                <ol class="mb-0 ps-3 text-secondary">
+                    <li class="mb-2">Creez un compte PME ou connectez-vous.</li>
+                    <li class="mb-2">Posez votre question en francais simple.</li>
+                    <li class="mb-2">L'assistant retrouve les passages pertinents du Code.</li>
+                    <li>Recevez une reponse claire avec les articles sources.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-4">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h6 text-success">Reponses fondees</h3>
+                    <p class="text-secondary small mb-0">
+                        Le moteur RAG s'appuie sur des extraits indexes du corpus juridique,
+                        pas sur des suppositions libres.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h6 text-success">Langage accessible</h3>
+                    <p class="text-secondary small mb-0">
+                        Concu pour les dirigeants de PME de Kinshasa sans formation juridique.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h6 text-success">Sources visibles</h3>
+                    <p class="text-secondary small mb-0">
+                        Chaque reponse indique les articles du Code du Travail utilises.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

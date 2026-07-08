@@ -10,7 +10,7 @@
                 <div>
                     <h1 class="h3 mb-1">Ajouter un document juridique</h1>
                     <p class="text-secondary mb-0">
-                        Le PDF sera extrait, decoupe en chunks et indexe dans ChromaDB.
+                        Le PDF sera extrait, decoupe en chunks et indexe en arriere-plan.
                     </p>
                 </div>
                 <a class="btn btn-outline-secondary align-self-start" href="{% url 'corpus:liste_documents' %}">
@@ -45,7 +45,7 @@
                 {% endfor %}
 
                 <button class="btn btn-success w-100" type="submit">
-                    Uploader et indexer
+                    Uploader et lancer l'indexation
                 </button>
             </form>
         </div>

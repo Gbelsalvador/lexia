@@ -8,7 +8,7 @@ Le projet utilise Django pour le backend et le frontend, SQLite en local, Chroma
 
 - Python 3.12 recommande
 - PowerShell sous Windows
-- Une cle API OpenAI ou Gemini
+- Une cle API LLM : OpenAI, Groq ou Gemini
 - Le PDF officiel du Code du Travail a indexer
 
 ## Installation locale
@@ -52,6 +52,7 @@ DATABASE_URL=sqlite:///db.sqlite3
 
 LLM_PROVIDER=openai
 OPENAI_API_KEY=votre-cle-openai
+GROQ_API_KEY=
 GEMINI_API_KEY=
 
 CHROMA_PERSIST_DIRECTORY=./chroma_db
@@ -64,6 +65,9 @@ SECURE_HSTS_SECONDS=0
 
 MAX_UPLOAD_SIZE_MB=10
 MAX_CHAT_QUESTION_LENGTH=1200
+RAG_MIN_RELEVANCE_SCORE=0.25
+CHAT_RATE_LIMIT_COUNT=20
+CHAT_RATE_LIMIT_WINDOW_SECONDS=3600
 ```
 
 Ne jamais commit le fichier `.env`.
@@ -106,7 +110,7 @@ Option 1, via l'interface :
 1. Se connecter avec un compte `ADMIN`.
 2. Aller sur http://127.0.0.1:8000/corpus/upload/
 3. Uploader le PDF officiel.
-4. Attendre la fin de l'extraction, du chunking, des embeddings et de l'indexation ChromaDB.
+4. L'indexation demarre en arriere-plan : suivre le statut sur la liste des documents.
 
 Option 2, via une commande :
 
@@ -161,8 +165,8 @@ Si `python` n'est pas reconnu, utiliser toujours :
 
 Si le chatbot indique que le service LLM est indisponible :
 
-- Verifier `OPENAI_API_KEY` ou `GEMINI_API_KEY` dans `.env`.
-- Verifier `LLM_PROVIDER`.
+- Verifier `OPENAI_API_KEY`, `GROQ_API_KEY` ou `GEMINI_API_KEY` dans `.env`.
+- Verifier `LLM_PROVIDER` (`openai`, `groq` ou `gemini`).
 - Relancer le serveur apres modification du `.env`.
 
 Si l'indexation PDF echoue :

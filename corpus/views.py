@@ -4,38 +4,28 @@ from django.views.decorators.http import require_http_methods
 
 from accounts.decorators import admin_required
 from corpus.forms import DocumentJuridiqueForm
+from corpus.indexing import schedule_indexing
 from corpus.models import DocumentJuridique
-from corpus.services import index_chunks
 
 
 @admin_required
 @require_http_methods(["GET", "POST"])
 def upload_document(request):
-    """Upload un PDF juridique et lance son indexation synchrone."""
+    """Upload un PDF juridique et lance son indexation en arriere-plan."""
     if request.method == "POST":
         form = DocumentJuridiqueForm(request.POST, request.FILES)
         if form.is_valid():
             document = form.save(commit=False)
             document.uploade_par = request.user
+            document.statut = DocumentJuridique.Statut.EN_COURS
             document.save()
-
-            try:
-                nombre_chunks = index_chunks(document)
-            except Exception as exc:
-                document.statut = DocumentJuridique.Statut.ERREUR
-                document.save(update_fields=["statut"])
-                messages.error(
-                    request,
-                    f"Document enregistre, mais l'indexation a echoue: {exc}",
-                )
-            else:
-                messages.success(
-                    request,
-                    f"Document indexe avec succes ({nombre_chunks} chunks).",
-                )
-                return redirect("corpus:liste_documents")
-        else:
-            messages.error(request, "Veuillez corriger les erreurs du formulaire.")
+            schedule_indexing(document.pk)
+            messages.success(
+                request,
+                "Document enregistre. L'indexation est en cours en arriere-plan.",
+            )
+            return redirect("corpus:liste_documents")
+        messages.error(request, "Veuillez corriger les erreurs du formulaire.")
     else:
         form = DocumentJuridiqueForm()
 
@@ -50,8 +40,14 @@ def liste_documents(request):
         .prefetch_related("chunks")
         .all()
     )
+    indexation_en_cours = documents.filter(
+        statut=DocumentJuridique.Statut.EN_COURS,
+    ).exists()
     return render(
         request,
         "corpus/liste_documents.html",
-        {"documents": documents},
+        {
+            "documents": documents,
+            "indexation_en_cours": indexation_en_cours,
+        },
     )

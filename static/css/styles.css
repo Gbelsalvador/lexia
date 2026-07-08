@@ -15,3 +15,7 @@
 .nav-link:focus {
     color: var(--lexia-accent);
 }
+
+.hero-section h1 {
+    color: var(--lexia-primary);
+}

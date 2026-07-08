@@ -14,8 +14,13 @@ CSRF_TRUSTED_ORIGINS=https://votre-domaine.onrender.com
 DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DBNAME
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
+GROQ_API_KEY=
+GEMINI_API_KEY=
 CHROMA_PERSIST_DIRECTORY=/opt/render/project/src/chroma_db
 EMBEDDING_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
+RAG_MIN_RELEVANCE_SCORE=0.25
+CHAT_RATE_LIMIT_COUNT=20
+CHAT_RATE_LIMIT_WINDOW_SECONDS=3600
 SECURE_SSL_REDIRECT=True
 SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True
@@ -50,5 +55,5 @@ Ajouter `gunicorn` a `requirements.txt` si la plateforme ne l'injecte pas.
 - `ALLOWED_HOSTS` contient uniquement les domaines autorises.
 - `CSRF_TRUSTED_ORIGINS` contient les origines HTTPS du site.
 - La cle API LLM reste uniquement dans les variables d'environnement.
-- Le dossier ChromaDB doit etre persistant si la plateforme le permet.
-- Les PDF officiels doivent etre uploades depuis l'interface admin corpus.
+- Les PDF officiels doivent etre uploades depuis l'interface corpus (indexation asynchrone).
+- ChromaDB doit etre persistant entre les redeploiements si possible.

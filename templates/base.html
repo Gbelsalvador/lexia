@@ -12,6 +12,7 @@
     >
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
 </head>
 <body class="min-vh-100 d-flex flex-column bg-light">
     <header class="border-bottom bg-white">
@@ -92,19 +93,7 @@
                 </div>
             {% endif %}
 
-            {% block content %}
-                <section class="py-5">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8">
-                            <h1 class="h2 mb-3">Assistant RAG pour le Code du Travail</h1>
-                            <p class="lead text-secondary mb-0">
-                                Base initiale du projet Django pour la vulgarisation
-                                du Code du Travail auprès des PME de Kinshasa.
-                            </p>
-                        </div>
-                    </div>
-                </section>
-            {% endblock %}
+            {% block content %}{% endblock %}
         </div>
     </main>
 

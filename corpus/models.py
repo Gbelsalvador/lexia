@@ -7,6 +7,7 @@ class DocumentJuridique(models.Model):
     """Document officiel utilise comme source du corpus juridique."""
 
     class Statut(models.TextChoices):
+        EN_COURS = "EN_COURS", "Indexation en cours"
         ACTIF = "ACTIF", "Actif"
         ARCHIVE = "ARCHIVE", "Archive"
         ERREUR = "ERREUR", "Erreur d'indexation"
@@ -18,7 +19,7 @@ class DocumentJuridique(models.Model):
     statut = models.CharField(
         max_length=20,
         choices=Statut.choices,
-        default=Statut.ACTIF,
+        default=Statut.EN_COURS,
     )
     uploade_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
