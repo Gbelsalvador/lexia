@@ -115,7 +115,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = (
     "django.contrib.staticfiles.storage.StaticFilesStorage"
-    if "test" in sys.argv
+    if DEBUG or "test" in sys.argv
     else "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
 

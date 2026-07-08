@@ -16,6 +16,10 @@
 
     let conversationId = app.dataset.conversationId || "";
 
+    if (new URLSearchParams(window.location.search).get("nouveau") === "1") {
+        conversationId = "";
+    }
+
     const getCookie = (name) => {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);

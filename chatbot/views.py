@@ -58,6 +58,7 @@ def chat_view(request: HttpRequest) -> HttpResponse:
 
     active_conversation: Conversation | None = None
     conversation_id = request.GET.get("conversation")
+    nouvelle_conversation = request.GET.get("nouveau") == "1"
 
     if conversation_id:
         active_conversation = get_object_or_404(
@@ -65,7 +66,7 @@ def chat_view(request: HttpRequest) -> HttpResponse:
             pk=conversation_id,
             utilisateur=request.user,
         )
-    elif conversations:
+    elif not nouvelle_conversation and conversations.exists():
         active_conversation = conversations.first()
 
     chat_messages = []
@@ -76,6 +77,7 @@ def chat_view(request: HttpRequest) -> HttpResponse:
         "conversations": conversations,
         "active_conversation": active_conversation,
         "chat_messages": chat_messages,
+        "nouvelle_conversation": nouvelle_conversation,
     }
     return render(request, "chatbot/chat.html", context)
 

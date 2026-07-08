@@ -91,6 +91,21 @@ class ChatbotSecurityTests(TestCase):
         self.assertEqual(response.json()["avertissement"], "llm_indisponible")
         self.assertEqual(Message.objects.filter(role=Message.Role.ASSISTANT).count(), 1)
 
+    def test_nouvelle_conversation_affiche_chat_vide(self) -> None:
+        conversation = Conversation.objects.create(utilisateur=self.user, titre="Ancienne")
+        Message.objects.create(
+            conversation=conversation,
+            role=Message.Role.USER,
+            contenu="Question ancienne",
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chatbot:chat"), {"nouveau": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bienvenue sur Lexia AI")
+        self.assertNotContains(response, "Question ancienne")
+
     @override_settings(CHAT_RATE_LIMIT_COUNT=1, CHAT_RATE_LIMIT_WINDOW_SECONDS=3600)
     @patch("chatbot.views.answer_question")
     def test_envoyer_message_applique_rate_limit(self, mock_answer) -> None:

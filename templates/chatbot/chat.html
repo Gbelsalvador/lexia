@@ -20,7 +20,7 @@
         <div class="chat-sidebar-header">
             <h2>Mes conversations</h2>
             <p class="small text-muted mb-0">Historique de vos echanges</p>
-            <a class="btn-new-chat" href="{% url 'chatbot:chat' %}">
+            <a class="btn-new-chat" href="{% url 'chatbot:chat' %}?nouveau=1">
                 <span aria-hidden="true">+</span> Nouvelle conversation
             </a>
         </div>
@@ -124,18 +124,21 @@
         </div>
 
         <div class="chat-input-area">
-            <form id="chat-form">
+            <form id="chat-form" class="chat-form">
                 {% csrf_token %}
                 <div class="chat-input-wrapper">
                     <input
                         id="chat-input"
                         name="question"
                         type="text"
-                        placeholder="Exemple : Que dit le Code du Travail sur la periode d'essai ?"
+                        class="chat-input-field"
+                        placeholder="Posez votre question sur le Code du Travail..."
                         autocomplete="off"
                         required
                     >
-                    <button id="chat-submit" type="submit">Envoyer</button>
+                    <button id="chat-submit" type="submit" class="chat-submit-btn">
+                        Envoyer
+                    </button>
                 </div>
             </form>
             <p class="chat-input-hint">
