@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET, require_POST
 
 from chatbot.models import Conversation, Message
+from chatbot.rate_limit import is_chat_rate_limited
 from rag_engine.pipeline import answer_question
 
 
@@ -100,6 +101,17 @@ def envoyer_message(request: HttpRequest) -> JsonResponse:
                 )
             },
             status=400,
+        )
+
+    if is_chat_rate_limited(request.user.pk):
+        return JsonResponse(
+            {
+                "erreur": (
+                    "Vous avez atteint la limite de questions pour le moment. "
+                    "Veuillez reessayer plus tard."
+                )
+            },
+            status=429,
         )
 
     conversation_id = payload.get("conversation_id")

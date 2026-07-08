@@ -13,9 +13,12 @@
                         Informations du compte connecte.
                     </p>
                 </div>
-                <a class="btn btn-outline-secondary align-self-start" href="{% url 'accounts:logout' %}">
-                    Se deconnecter
-                </a>
+                <form method="post" action="{% url 'accounts:logout' %}" class="align-self-start">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary">
+                        Se deconnecter
+                    </button>
+                </form>
             </div>
 
             <dl class="row mb-0">

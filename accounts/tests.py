@@ -43,3 +43,33 @@ class AccountsTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("accounts:profile"))
+
+    def test_connexion_ignore_next_externe(self) -> None:
+        Utilisateur.objects.create_user(
+            username="pme_redirect",
+            email="redirect@example.com",
+            password="MotDePasseComplexe123!",
+            role=Utilisateur.Role.PME,
+        )
+
+        response = self.client.post(
+            reverse("accounts:login") + "?next=https://evil.example/phishing",
+            {
+                "username": "pme_redirect",
+                "password": "MotDePasseComplexe123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("accounts:profile"))
+
+    def test_deconnexion_exige_post(self) -> None:
+        Utilisateur.objects.create_user(
+            username="pme_logout",
+            password="MotDePasseComplexe123!",
+            role=Utilisateur.Role.PME,
+        )
+        self.client.login(username="pme_logout", password="MotDePasseComplexe123!")
+
+        response = self.client.get(reverse("accounts:logout"))
+
+        self.assertEqual(response.status_code, 405)

@@ -5,6 +5,7 @@ from django.test import SimpleTestCase, override_settings
 from rag_engine.llm_client import LLMClient, LLMResponse
 from rag_engine.pipeline import answer_question
 from rag_engine.prompt_builder import build_prompt
+from rag_engine.retriever import retrieve_relevant_chunks
 from rag_engine.vector_store import RetrievedChunk
 
 
@@ -96,3 +97,21 @@ class RAGPipelineTests(SimpleTestCase):
 
         mock_generate_groq.assert_called_once()
         mock_generate_openai.assert_not_called()
+
+    @patch("rag_engine.retriever.ChromaVectorStore")
+    @patch("rag_engine.retriever.EmbeddingService")
+    def test_retriever_filtre_les_chunks_sous_le_seuil(
+        self,
+        mock_embedding_service,
+        mock_vector_store,
+    ) -> None:
+        mock_embedding_service.return_value.embed.return_value = [0.1, 0.2]
+        mock_vector_store.return_value.search.return_value = [
+            RetrievedChunk(content="Pertinent", metadata={}, score=0.8),
+            RetrievedChunk(content="Faible", metadata={}, score=0.1),
+        ]
+
+        results = retrieve_relevant_chunks("Question test", min_score=0.25)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].content, "Pertinent")

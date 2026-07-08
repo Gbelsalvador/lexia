@@ -76,6 +76,16 @@ class ChromaVectorStore:
         except Exception as exc:  # pragma: no cover - depend du runtime local
             raise RuntimeError("Echec de l'ajout des chunks dans ChromaDB.") from exc
 
+    def delete_ids(self, ids: list[str]) -> None:
+        """Supprime des vecteurs de ChromaDB par identifiant."""
+        if not ids:
+            return
+
+        try:
+            self.collection.delete(ids=ids)
+        except Exception as exc:  # pragma: no cover - depend du runtime local
+            raise RuntimeError("Echec de la suppression des chunks dans ChromaDB.") from exc
+
     def search(self, query_embedding: list[float], top_k: int = 5) -> list[RetrievedChunk]:
         """
         Recherche les chunks les plus pertinents selon l'embedding de question.

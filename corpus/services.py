@@ -6,14 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
-from django.conf import settings
 from django.db import transaction
 
 from corpus.models import ChunkDocument, DocumentJuridique
+from rag_engine.embeddings import EmbeddingService
+from rag_engine.vector_store import ChromaVectorStore
 
 
 ARTICLE_PATTERN = re.compile(
-    r"(?im)^\s*(Article\s+\d+[A-Za-z0-9\-]*)\s*[:.]?"
+    r"(?i)\b(Article\s+\d+[A-Za-z0-9\-]*)\s*[:.]?"
 )
 
 
@@ -100,15 +101,18 @@ def chunk_text(texte: str, taille_max: int = 500, overlap: int = 50) -> list[Tex
     if overlap >= taille_max:
         raise ValueError("overlap doit etre inferieur a taille_max.")
 
-    normalized_text = re.sub(r"\s+", " ", texte).strip()
-    if not normalized_text:
+    raw_text = (texte or "").strip()
+    if not raw_text:
         return []
 
     chunks: list[TextChunk] = []
     chunk_index = 0
 
-    for numero_article, section in _split_by_articles(normalized_text):
-        for content in _split_long_section(section, taille_max, overlap):
+    for numero_article, section in _split_by_articles(raw_text):
+        normalized_section = re.sub(r"\s+", " ", section).strip()
+        if not normalized_section:
+            continue
+        for content in _split_long_section(normalized_section, taille_max, overlap):
             chunks.append(
                 TextChunk(
                     content=content,
@@ -119,30 +123,6 @@ def chunk_text(texte: str, taille_max: int = 500, overlap: int = 50) -> list[Tex
             chunk_index += 1
 
     return chunks
-
-
-def _get_embedding_model():
-    try:
-        from sentence_transformers import SentenceTransformer
-    except ImportError as exc:
-        raise RuntimeError(
-            "La dependance sentence-transformers est requise. "
-            "Installez: pip install sentence-transformers"
-        ) from exc
-
-    return SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
-
-
-def _get_chroma_collection():
-    try:
-        import chromadb
-    except ImportError as exc:
-        raise RuntimeError(
-            "La dependance chromadb est requise. Installez: pip install chromadb"
-        ) from exc
-
-    client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIRECTORY)
-    return client.get_or_create_collection(name="code_travail_rdc")
 
 
 @transaction.atomic
@@ -160,17 +140,17 @@ def index_chunks(document: DocumentJuridique) -> int:
     if not chunks:
         raise ValueError("Le document ne contient aucun chunk indexable.")
 
-    model = _get_embedding_model()
-    collection = _get_chroma_collection()
+    embedding_service = EmbeddingService()
+    vector_store = ChromaVectorStore()
 
     old_vector_ids = list(document.chunks.values_list("vector_id", flat=True))
     if old_vector_ids:
-        collection.delete(ids=old_vector_ids)
+        vector_store.delete_ids(old_vector_ids)
 
     document.chunks.all().delete()
 
     contents = [chunk.content for chunk in chunks]
-    embeddings = model.encode(contents, normalize_embeddings=True).tolist()
+    embeddings = embedding_service.embed_many(contents)
 
     ids: list[str] = []
     metadatas: list[dict[str, str | int | None]] = []
@@ -197,11 +177,11 @@ def index_chunks(document: DocumentJuridique) -> int:
             )
         )
 
-    collection.add(
-        ids=ids,
-        documents=contents,
+    vector_store.add_chunks(
+        chunks=contents,
         embeddings=embeddings,
         metadatas=metadatas,
+        ids=ids,
     )
     ChunkDocument.objects.bulk_create(chunk_objects)
 

@@ -3,9 +3,21 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.forms import LoginForm, PMERegistrationForm
+
+
+def _safe_redirect_after_login(request, next_url: str | None):
+    """Redirige vers next uniquement si l'URL est interne et autorisee."""
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+    return redirect("accounts:profile")
 
 
 @require_http_methods(["GET", "POST"])
@@ -43,8 +55,7 @@ def login_view(request):
         if form.is_valid():
             auth_login(request, form.get_user())
             messages.success(request, "Connexion reussie.")
-            next_url = request.GET.get("next")
-            return redirect(next_url or "accounts:profile")
+            return _safe_redirect_after_login(request, request.GET.get("next"))
 
         messages.error(request, "Identifiants invalides.")
     else:
@@ -53,6 +64,7 @@ def login_view(request):
     return render(request, "accounts/login.html", {"form": form})
 
 
+@require_POST
 @login_required
 def logout_view(request):
     """Ferme la session active."""

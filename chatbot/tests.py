@@ -90,3 +90,26 @@ class ChatbotSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["avertissement"], "llm_indisponible")
         self.assertEqual(Message.objects.filter(role=Message.Role.ASSISTANT).count(), 1)
+
+    @override_settings(CHAT_RATE_LIMIT_COUNT=1, CHAT_RATE_LIMIT_WINDOW_SECONDS=3600)
+    @patch("chatbot.views.answer_question")
+    def test_envoyer_message_applique_rate_limit(self, mock_answer) -> None:
+        mock_answer.return_value = {
+            "reponse": "Reponse test",
+            "sources": [],
+        }
+        self.client.force_login(self.user)
+
+        first = self.client.post(
+            reverse("chatbot:envoyer_message"),
+            data=json.dumps({"question": "Question 1"}),
+            content_type="application/json",
+        )
+        second = self.client.post(
+            reverse("chatbot:envoyer_message"),
+            data=json.dumps({"question": "Question 2"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)

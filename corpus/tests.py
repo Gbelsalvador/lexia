@@ -18,6 +18,19 @@ class ChunkingTests(SimpleTestCase):
         self.assertEqual(chunks[0].content.split()[-2:], chunks[1].content.split()[:2])
         self.assertEqual(chunks[1].content.split()[-2:], chunks[2].content.split()[:2])
 
+    def test_chunk_text_detecte_les_articles_apres_normalisation(self) -> None:
+        texte = (
+            "Preambule du code.\n\n"
+            "Article 1. Le contrat de travail est conclu par ecrit.\n\n"
+            "Article 2. La duree du travail est limitee."
+        )
+
+        chunks = chunk_text(texte, taille_max=50, overlap=5)
+
+        articles = {chunk.numero_article for chunk in chunks if chunk.numero_article}
+        self.assertIn("Article 1", articles)
+        self.assertIn("Article 2", articles)
+
 
 class DocumentUploadValidationTests(TestCase):
     """Tests de validation des PDF uploades."""
