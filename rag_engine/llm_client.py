@@ -1,11 +1,22 @@
 ﻿from __future__ import annotations
 
 import json
+import logging
+import time
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+# Nombre de tentatives supplementaires en cas d'erreur reseau transitoire
+# (connexion coupee, timeout, erreur 5xx). L'analyse de contrat enchaine
+# une dizaine d'appels LLM successifs : sans retry, le moindre accroc reseau
+# sur UN SEUL appel faisait echouer toute l'analyse.
+MAX_NETWORK_RETRIES = 2
+RETRY_BACKOFF_SECONDS = 1.5
 
 
 @dataclass(frozen=True)
@@ -164,27 +175,54 @@ class LLMClient:
                 "Authorization": f"Bearer {api_key}",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             },
-            
             method="POST",
         )
 
-        try:
-            with urlopen(request, timeout=self.timeout) as response:
-                body = response.read().decode("utf-8")
-                data = json.loads(body)
-        except HTTPError as exc:
-            status_code = exc.code
-            if status_code in {401, 403}:
-                raise RuntimeError("Cle Groq invalide ou non autorisee. Verifiez GROQ_API_KEY.") from exc
+        data: dict | None = None
+        derniere_erreur: Exception | None = None
+
+        for tentative in range(MAX_NETWORK_RETRIES + 1):
+            try:
+                with urlopen(request, timeout=self.timeout) as response:
+                    body = response.read().decode("utf-8")
+                    data = json.loads(body)
+                break
+            except HTTPError as exc:
+                status_code = exc.code
+                if status_code in {401, 403}:
+                    raise RuntimeError(
+                        "Cle Groq invalide ou non autorisee. Verifiez GROQ_API_KEY."
+                    ) from exc
+                if status_code >= 500 and tentative < MAX_NETWORK_RETRIES:
+                    derniere_erreur = exc
+                    logger.warning(
+                        "Erreur Groq HTTP %s (tentative %s/%s), nouvelle tentative...",
+                        status_code, tentative + 1, MAX_NETWORK_RETRIES,
+                    )
+                    time.sleep(RETRY_BACKOFF_SECONDS * (tentative + 1))
+                    continue
+                raise RuntimeError(
+                    f"Erreur Groq (HTTP {status_code}). Veuillez reessayer plus tard."
+                ) from exc
+            except (URLError, TimeoutError, ConnectionResetError, ConnectionError) as exc:
+                if tentative < MAX_NETWORK_RETRIES:
+                    derniere_erreur = exc
+                    logger.warning(
+                        "Erreur reseau Groq (tentative %s/%s) : %s. Nouvelle tentative...",
+                        tentative + 1, MAX_NETWORK_RETRIES, exc,
+                    )
+                    time.sleep(RETRY_BACKOFF_SECONDS * (tentative + 1))
+                    continue
+                raise RuntimeError(
+                    "Erreur de connexion a Groq. Verifiez votre reseau puis reessayez."
+                ) from exc
+            except Exception as exc:  # pragma: no cover - defense generale
+                raise RuntimeError("Erreur inattendue lors de l'appel Groq.") from exc
+
+        if data is None:
             raise RuntimeError(
-                f"Erreur Groq (HTTP {status_code}). Veuillez reessayer plus tard."
-            ) from exc
-        except URLError as exc:
-            raise RuntimeError("Erreur de connexion a Groq. Verifiez votre reseau puis reessayez.") from exc
-        except TimeoutError as exc:
-            raise RuntimeError("Timeout Groq: le service met trop de temps a repondre.") from exc
-        except Exception as exc:  # pragma: no cover - defense generale
-            raise RuntimeError("Erreur inattendue lors de l'appel Groq.") from exc
+                "Erreur de connexion a Groq. Verifiez votre reseau puis reessayez."
+            ) from derniere_erreur
 
         choices = data.get("choices") or []
         if not choices:
