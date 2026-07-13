@@ -13,6 +13,7 @@
 {% block content %}
 <section class="chat-layout" id="chat-app"
     data-envoyer-url="{% url 'chatbot:envoyer_message' %}"
+    data-analyser-url="{% url 'chatbot:analyser_contrat' %}"
     data-feedback-url="{% url 'chatbot:enregistrer_feedback' %}"
     data-conversation-id="{% if active_conversation %}{{ active_conversation.id }}{% endif %}">
 
@@ -124,28 +125,42 @@
         </div>
 
         <div class="chat-input-area">
-            <form id="chat-form" class="chat-form">
-                {% csrf_token %}
-                <div class="chat-input-wrapper">
-                    <input
-                        id="chat-input"
-                        name="question"
-                        type="text"
-                        class="chat-input-field"
-                        placeholder="Posez votre question sur le Code du Travail..."
-                        autocomplete="off"
-                        required
-                    >
-                    <button id="chat-submit" type="submit" class="chat-submit-btn">
-                        Envoyer
-                    </button>
-                </div>
-            </form>
-            <p class="chat-input-hint">
-                Les reponses s'appuient sur le corpus juridique indexe. Consultez un juriste pour les cas complexes.
-            </p>
-            <div id="chat-error" class="chat-error d-none"></div>
+    <!-- Zone d'aperçu du fichier ou texte de contrat sélectionné avant envoi -->
+    <div id="contract-preview" class="contract-preview d-none mb-2 p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+        <span id="contract-preview-name" class="small text-truncate fw-bold text-primary"></span>
+        <button type="button" id="btn-remove-contract" class="btn btn-sm btn-close" aria-label="Supprimer"></button>
+    </div>
+
+    <form id="chat-form" class="chat-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Input file masqué pour charger le contrat -->
+        <input type="file" id="contract-file-input" name="fichier" accept=".pdf,.txt" class="d-none">
+        
+        <div class="chat-input-wrapper">
+            <!-- Bouton d'ajout de document -->
+            <button type="button" id="btn-trigger-upload" class="chat-upload-btn" title="Analyser un contrat (PDF, TXT)">
+                📎
+            </button>
+            
+            <input
+                id="chat-input"
+                name="question"
+                type="text"
+                class="chat-input-field"
+                placeholder="Posez une question ou analysez un contrat avec le trombone..."
+                autocomplete="off"
+                required
+            >
+            <button id="chat-submit" type="submit" class="chat-submit-btn">
+                Envoyer
+            </button>
         </div>
+    </form>
+    <p class="chat-input-hint">
+        Les reponses s'appuient sur le corpus juridique indexe. Vous pouvez aussi uploader un contrat pour une analyse point par point.
+    </p>
+    <div id="chat-error" class="chat-error d-none mb-2 text-danger small"></div>
+</div>
     </div>
 </section>
 {% endblock %}

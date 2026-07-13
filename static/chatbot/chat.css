@@ -196,6 +196,43 @@
     animation: pulse-dot 2s ease infinite;
 }
 
+/* Style pour le bouton trombone d'upload */
+.chat-upload-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    padding: 0 12px;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.chat-upload-btn:hover {
+    color: #0d6efd;
+}
+
+/* Zone d'aperçu du fichier chargé */
+.contract-preview {
+    font-size: 0.85rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+/* Accordéons pour l'analyse point par point */
+.contract-decomposition details {
+    transition: background-color 0.2s ease;
+}
+.contract-decomposition details[open] {
+    background-color: #fdfdfd;
+}
+.contract-decomposition summary {
+    outline: none;
+    user-select: none;
+}
+.contract-decomposition summary:hover {
+    color: #0d6efd !important;
+}
+
 @keyframes pulse-dot {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
