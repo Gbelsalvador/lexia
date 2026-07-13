@@ -14,6 +14,8 @@ from chatbot.models import Conversation, Message
 from chatbot.rate_limit import is_chat_rate_limited
 from rag_engine.pipeline import answer_question
 
+from corpus.services import extract_text_from_pdf
+from rag_engine.contract_analysis import analyze_contract
 
 logger = logging.getLogger(__name__)
 
@@ -220,3 +222,107 @@ def enregistrer_feedback(request: HttpRequest) -> JsonResponse:
     return JsonResponse(
         {"ok": True, "message_id": message.pk, "feedback": message.feedback}
     )
+
+ 
+@require_POST
+@login_required
+def analyser_contrat(request: HttpRequest) -> JsonResponse:
+    """
+    Endpoint d'analyse avancee d'un contrat, point par point (RAG + resume + synthese).
+ 
+    Accepte soit un fichier PDF/texte (multipart, champ "fichier"),
+    soit du texte colle directement (champ "texte").
+    """
+    conversation_id = request.POST.get("conversation_id") or None
+    question = (request.POST.get("question") or "").strip()
+ 
+    uploaded_file = request.FILES.get("fichier")
+    texte_colle = (request.POST.get("texte") or "").strip()
+ 
+    if not uploaded_file and not texte_colle:
+        return JsonResponse(
+            {"erreur": "Veuillez fournir un fichier de contrat ou coller le texte."},
+            status=400,
+        )
+ 
+    try:
+        if uploaded_file:
+            if uploaded_file.name.lower().endswith(".pdf"):
+                texte_contrat = extract_text_from_pdf(uploaded_file)
+            else:
+                texte_contrat = uploaded_file.read().decode("utf-8", errors="ignore")
+        else:
+            texte_contrat = texte_colle
+    except Exception:
+        logger.exception("Echec d'extraction du texte du contrat pour user=%s", request.user.pk)
+        return JsonResponse(
+            {"erreur": "Impossible de lire le contenu du contrat fourni."},
+            status=400,
+        )
+ 
+    if is_chat_rate_limited(request.user.pk):
+        return JsonResponse(
+            {"erreur": "Vous avez atteint la limite de requetes pour le moment."},
+            status=429,
+        )
+ 
+    if conversation_id:
+        conversation = get_object_or_404(
+            Conversation, pk=conversation_id, utilisateur=request.user,
+        )
+    else:
+        conversation = Conversation.objects.create(
+            utilisateur=request.user,
+            titre="Analyse de contrat",
+        )
+ 
+    Message.objects.create(
+        conversation=conversation,
+        role=Message.Role.USER,
+        contenu=question or "Analyse de contrat demandee.",
+    )
+ 
+    try:
+        result = analyze_contract(texte_contrat, question_utilisateur=question or None)
+    except ValueError as exc:
+        return JsonResponse({"erreur": str(exc)}, status=400)
+    except Exception:
+        logger.exception("Echec du pipeline d'analyse de contrat pour user=%s", request.user.pk)
+        fallback = "L'analyse du contrat a echoue. Veuillez reessayer plus tard."
+        assistant_message = Message.objects.create(
+            conversation=conversation,
+            role=Message.Role.ASSISTANT,
+            contenu=fallback,
+            sources=[],
+        )
+        return JsonResponse(
+            {
+                "reponse": fallback,
+                "sources": [],
+                "message_id": assistant_message.pk,
+                "conversation_id": conversation.pk,
+                "avertissement": "analyse_echouee",
+            }
+        )
+ 
+    assistant_message = Message.objects.create(
+        conversation=conversation,
+        role=Message.Role.ASSISTANT,
+        contenu=result["reponse"],
+        sources=result["sources"],
+    )
+ 
+    if not conversation.titre or conversation.titre == "Nouvelle conversation":
+        conversation.titre = "Analyse de contrat"
+    conversation.save(update_fields=["titre", "date_mise_a_jour"])
+ 
+    return JsonResponse(
+        {
+            "reponse": result["reponse"],
+            "sources": result["sources"],
+            "points": result["points"],
+            "message_id": assistant_message.pk,
+            "conversation_id": conversation.pk,
+        }
+    )
+ 

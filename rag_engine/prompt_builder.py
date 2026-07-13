@@ -118,3 +118,54 @@ def build_prompt(
         "CONTRAINTE FINALE: Ne produis aucune information hors contexte. "
         "Si le contexte est insuffisant, dis-le explicitement."
     )
+
+def build_clause_summary_prompt(
+    titre_point: str,
+    contenu_point: str,
+    chunks_contexte: list[RetrievedChunk],
+) -> str:
+    """Prompt pour resumer UN point du contrat a la lumiere du RAG."""
+    contexte = _format_context(chunks_contexte)
+    return (
+        f"SYSTEME:\n{SYSTEM_PROMPT}\n\n"
+        "TACHE: Tu analyses UNIQUEMENT le point de contrat ci-dessous, a la lumiere "
+        "du contexte juridique fourni. Produis un resume court et actionnable "
+        "(120 mots maximum) qui indique : ce que dit ce point, s'il semble conforme "
+        "au Code du Travail, et les risques ou non-conformites eventuels. "
+        "Ne resume aucun autre point du contrat.\n\n"
+        f"POINT DU CONTRAT ({titre_point}):\n{contenu_point}\n\n"
+        f"CONTEXTE JURIDIQUE RECUPERE POUR CE POINT:\n{contexte}\n\n"
+        "REPONSE (resume uniquement, sans preambule):"
+    )
+
+
+def build_synthesis_prompt(
+    points: list[dict[str, str]],
+    question_utilisateur: str | None = None,
+) -> str:
+    """Prompt final : assemble les resumes de chaque point, pas le contrat brut."""
+    points_formates = "\n\n".join(
+        f"[{item['titre']}]\n{item['resume']}" for item in points
+    )
+    question = (
+        sanitize_user_text(question_utilisateur)
+        if question_utilisateur
+        else (
+            "Analyse ce contrat de travail dans son ensemble et signale les points "
+            "de vigilance pour un gerant de PME."
+        )
+    )
+
+    return (
+        f"SYSTEME:\n{SYSTEM_PROMPT}\n\n"
+        "TACHE: Tu disposes des resumes de chaque point d'un contrat de travail, "
+        "deja verifies individuellement par rapport au Code du Travail. "
+        "Redige une reponse finale, structuree et vulgarisee, qui : "
+        "1) donne une vue d'ensemble du contrat, "
+        "2) liste les points conformes, "
+        "3) liste les points a risque ou non conformes en citant l'article concerne, "
+        "4) donne une recommandation claire pour le gerant de PME.\n\n"
+        f"RESUMES DES POINTS DU CONTRAT:\n{points_formates}\n\n"
+        f"DEMANDE DE L'UTILISATEUR:\n{question}\n\n"
+        "REPONSE FINALE (francais clair, structure avec des titres courts):"
+    )
