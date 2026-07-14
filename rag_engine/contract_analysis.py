@@ -25,7 +25,7 @@ CLAUSE_MARKER_PATTERN = re.compile(
 MAX_CLAUSES = 12
 MAX_WORDS_PER_CLAUSE = 400
 MIN_WORDS_PER_CLAUSE = 15
-CLAUSE_MAX_CHARS = 2800  # marge de securite sous la limite de 3000 de sanitize_user_text
+CLAUSE_MAX_CHARS = 2800 
 
 
 @dataclass(frozen=True)
@@ -109,11 +109,6 @@ def split_contract_into_clauses(texte_contrat: str) -> list[tuple[str, str]]:
         tail_titre, tail_contenu = merged[MAX_CLAUSES - 1]
         for titre, contenu in merged[MAX_CLAUSES:]:
             tail_contenu = f"{tail_contenu}\n\n{contenu}"
-        # Bug corrige : sans cette troncature, un contrat avec plus de
-        # MAX_CLAUSES points produisait un dernier bloc de taille illimitee
-        # (toutes les clauses excedentaires concatenees), ce qui depassait
-        # systematiquement la limite de 3000 caracteres appliquee plus loin
-        # dans analyze_clause et faisait echouer toute l'analyse.
         tail_contenu = tail_contenu[:CLAUSE_MAX_CHARS]
         head.append((tail_titre, tail_contenu))
         merged = head
@@ -156,10 +151,7 @@ def analyze_clause(
     try:
         clause_texte = sanitize_user_text(contenu_tronque, max_length=3000)
     except ValueError:
-        # Garde-fou supplementaire : si malgre la troncature le texte nettoye
-        # (espaces normalises) depasse encore la limite, on retronque plus fort
-        # plutot que de laisser l'exception remonter et faire echouer TOUTE
-        # l'analyse du contrat pour un seul point trop long.
+        
         logger.warning("Point %s tronque davantage pour respecter la limite de taille.", index)
         clause_texte = sanitize_user_text(contenu_tronque[:2000], max_length=3000)
 

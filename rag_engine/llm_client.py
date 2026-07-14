@@ -11,10 +11,7 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# Nombre de tentatives supplementaires en cas d'erreur reseau transitoire
-# (connexion coupee, timeout, erreur 5xx). L'analyse de contrat enchaine
-# une dizaine d'appels LLM successifs : sans retry, le moindre accroc reseau
-# sur UN SEUL appel faisait echouer toute l'analyse.
+
 MAX_NETWORK_RETRIES = 2
 RETRY_BACKOFF_SECONDS = 1.5
 
